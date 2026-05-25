@@ -84,6 +84,8 @@ fun MediaGremlinApp() {
                 sources = sources,
                 lastFetchTime = lastFetchTime,
                 onToggleSource = settingsViewModel::toggleSource,
+                onDeleteSource = settingsViewModel::deleteSource,
+                onAddRssSource = settingsViewModel::addRssSource,
                 onClearCache = settingsViewModel::clearCache
             )
         }

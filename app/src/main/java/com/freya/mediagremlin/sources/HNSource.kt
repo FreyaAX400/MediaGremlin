@@ -9,6 +9,7 @@ import kotlinx.coroutines.withContext
 import okhttp3.Request
 import org.json.JSONArray
 import org.json.JSONObject
+import com.freya.mediagremlin.util.UrlNormalizer
 
 object HNSource {
     private const val BASE = "https://hacker-news.firebaseio.com/v0"
@@ -23,14 +24,14 @@ object HNSource {
 
     private fun fetchTopIds(): List<Long> {
         val request = Request.Builder().url("$BASE/topstories.json").build()
-        val body = HttpClient.client.newCall(request).execute().body?.string() ?: return emptyList()
+        val body = HttpClient.client.newCall(request).execute().body.string() ?: return emptyList()
         val array = JSONArray(body)
         return (0 until array.length()).map { array.getLong(it) }
     }
 
     private fun fetchStory(id: Long): Post? {
         val request = Request.Builder().url("$BASE/item/$id.json").build()
-        val body = HttpClient.client.newCall(request).execute().body?.string() ?: return null
+        val body = HttpClient.client.newCall(request).execute().body.string() ?: return null
         val json = JSONObject(body)
         if (json.optString("type") != "story") return null
 
@@ -45,6 +46,7 @@ object HNSource {
             previewText = json.optString("text").takeIf { it.isNotBlank() },
             previewImageUrl = null,
             url = if (isTextOnly) "https://news.ycombinator.com/item?id=$id" else externalUrl,
+            urlNormalized = UrlNormalizer.normalize(if (isTextOnly) "https://news.ycombinator.com/item?id=$id" else externalUrl),
             publishedAt = json.optLong("time", 0) * 1000,
             isTextOnly = isTextOnly
         )

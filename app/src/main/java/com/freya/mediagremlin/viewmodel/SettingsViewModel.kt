@@ -25,6 +25,26 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    fun addRssSource(name: String, url: String) {
+        viewModelScope.launch {
+            sourceDao.insertAll(listOf(
+                Source(
+                    id = "rss:${url.hashCode()}",
+                    name = name,
+                    type = "RSS",
+                    url = url,
+                    enabled = true
+                )
+            ))
+        }
+    }
+
+    fun deleteSource(source: Source) {
+        viewModelScope.launch {
+            sourceDao.delete(source)
+        }
+    }
+
     fun clearCache() {
         viewModelScope.launch {
             postDao.clearUnsaved()
@@ -34,17 +54,15 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     init {
         viewModelScope.launch {
             if (sourceDao.getAllSources().first().isEmpty()) {
-                sourceDao.insertAll(
-                    listOf(
-                        Source(
-                            id = "hn",
-                            name = "Hacker News",
-                            type = "HN",
-                            url = "https://hacker-news.firebaseio.com/v0",
-                            enabled = true
-                        )
+                sourceDao.insertAll(listOf(
+                    Source(
+                        id = "hn",
+                        name = "Hacker News",
+                        type = "HN",
+                        url = "https://hacker-news.firebaseio.com/v0",
+                        enabled = true
                     )
-                )
+                ))
             }
         }
     }

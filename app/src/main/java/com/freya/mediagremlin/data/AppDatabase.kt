@@ -9,7 +9,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
     entities = [Post::class, Source::class, Tag::class],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -25,6 +25,16 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE posts ADD COLUMN urlNormalized TEXT NOT NULL DEFAULT ''")
+                db.execSQL("UPDATE posts SET urlNormalized = url")
+                // Remove all duplicates (including saved ones if they have duplicate URLs) before adding unique index
+                db.execSQL("DELETE FROM posts WHERE rowid NOT IN (SELECT MAX(rowid) FROM posts GROUP BY urlNormalized)")
+                db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_posts_urlNormalized ON posts(urlNormalized)")
+            }
+        }
+
         fun getInstance(context: Context): AppDatabase =
             INSTANCE ?: synchronized(this) {
                 Room.databaseBuilder(
@@ -32,7 +42,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "mediagremlin.db"
                 )
-                    .addMigrations(MIGRATION_1_2)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                     .build().also { INSTANCE = it }
             }
     }
